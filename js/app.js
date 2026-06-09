@@ -45,14 +45,16 @@ function renderGrid() {
   grid.innerHTML = places.map(p => {
     const catKey = CAT_KEY[p.category] || 'Casual';
     const stars = p.our_rating ? '★'.repeat(p.our_rating) : '';
+    const visited = p.status === 'ya fui';
     return `
-    <div class="place-card${p.status === 'ya fui' ? ' visited' : ''}" onclick="openDetail('${p.id}')">
+    <div class="place-card${visited ? ' visited' : ' cl-' + catKey}" onclick="openDetail('${p.id}')">
       <div class="card-top">
         <span class="card-name">${esc(p.name)}</span>
-        <span class="badge ${p.status === 'ya fui' ? 'badge-been' : 'badge-want'}">${p.status === 'ya fui' ? '✓ Ya fui' : '♡ Quiero ir'}</span>
+        ${visited ? `<span class="badge badge-been">✓ Ya fui</span>` : ''}
       </div>
       <div class="card-meta">
         ${p.neighborhood ? `<span class="card-neighborhood">${esc(p.neighborhood)}</span>` : ''}
+        ${p.neighborhood && p.category ? `<span class="sep">·</span>` : ''}
         ${p.category ? `<span class="card-cat cat-${catKey}">${esc(p.category)}</span>` : ''}
       </div>
       ${p.notes ? `<p class="card-notes">${esc(p.notes)}</p>` : ''}
