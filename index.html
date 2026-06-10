@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#0f0f0f">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#F0E6D2">
   <title>¿Dónde vamos?</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -13,87 +13,167 @@
 <body>
   <div id="app">
 
-    <header>
-      <h1>¿Dónde vamos?</h1>
-      <button id="btn-add" onclick="openAddModal()">+ Agregar</button>
-    </header>
+    <!-- ── VIEW: HOME ── -->
+    <div id="view-home">
+      <header class="home-header">
+        <h1>¿Dónde vamos?</h1>
+        <div class="header-actions">
+          <button class="icon-btn" id="btn-edit-mode" onclick="toggleEditMode()" title="Editar categorías">✎</button>
+          <button class="icon-btn accent" onclick="openPlaceModal(null, null)" title="Agregar lugar">+</button>
+        </div>
+      </header>
 
-    <div class="controls">
-      <input type="search" id="search-input" placeholder="Buscar lugar o barrio..." oninput="filterPlaces()" autocomplete="off">
-      <div class="status-tabs">
-        <button class="tab active" data-status="todos" onclick="setStatusFilter('todos', this)">Todos</button>
-        <button class="tab" data-status="quiero ir" onclick="setStatusFilter('quiero ir', this)">Quiero ir</button>
-        <button class="tab" data-status="ya fui" onclick="setStatusFilter('ya fui', this)">Ya fui</button>
+      <div class="search-wrap">
+        <input type="search" id="search-input" placeholder="Buscar lugar..." oninput="onSearch(this.value)" autocomplete="off">
+      </div>
+
+      <div id="search-results" class="hidden">
+        <div class="section-label">Resultados</div>
+        <div id="search-grid" class="places-list"></div>
+      </div>
+
+      <div id="cat-section">
+        <div id="cat-grid" class="cat-grid"></div>
+        <button class="add-cat-btn" onclick="openCategoryModal(null)">+ Nueva categoría</button>
       </div>
     </div>
 
-    <div class="categories" id="categories"></div>
+    <!-- ── VIEW: CATEGORY ── -->
+    <div id="view-category" class="hidden">
+      <header class="cat-header">
+        <button class="back-btn" onclick="goHome()">←</button>
+        <div id="cat-header-info" class="cat-header-info"></div>
+        <button class="icon-btn accent" onclick="openPlaceModal(null, currentCategoryId)">+</button>
+      </header>
 
-    <div class="top-bar">
-      <span id="stats" class="stats-inline"></span>
-      <button id="btn-random" onclick="randomPlace()">🎲 Sorpresa</button>
-    </div>
+      <div class="status-tabs">
+        <button class="tab active" onclick="setFilter('todos', this)">Todos</button>
+        <button class="tab" onclick="setFilter('quiero ir', this)">Quiero ir</button>
+        <button class="tab" onclick="setFilter('ya fui', this)">Ya fui</button>
+      </div>
 
-    <div class="places-grid" id="places-grid">
-      <div class="loading">Cargando lugares...</div>
+      <div id="cat-places-list" class="places-list"></div>
     </div>
 
   </div>
 
-  <!-- Modal Detalle -->
-  <div id="modal-detail" class="modal hidden" onclick="handleModalBackdrop(event, 'modal-detail')">
+  <!-- ── MODAL: Place Detail ── -->
+  <div id="modal-place" class="modal hidden" onclick="backdropClose(event,'modal-place')">
     <div class="modal-sheet">
       <div class="modal-handle"></div>
-      <button class="modal-close" onclick="closeModal('modal-detail')">✕</button>
-      <div id="modal-detail-content" class="modal-body"></div>
+      <button class="modal-close" onclick="closeModal('modal-place')">✕</button>
+      <div id="modal-place-body" class="modal-body"></div>
     </div>
   </div>
 
-  <!-- Modal Agregar -->
-  <div id="modal-add" class="modal hidden" onclick="handleModalBackdrop(event, 'modal-add')">
+  <!-- ── MODAL: Add/Edit Place ── -->
+  <div id="modal-add-place" class="modal hidden" onclick="backdropClose(event,'modal-add-place')">
     <div class="modal-sheet">
       <div class="modal-handle"></div>
-      <button class="modal-close" onclick="closeModal('modal-add')">✕</button>
+      <button class="modal-close" onclick="closeModal('modal-add-place')">✕</button>
       <div class="modal-body">
-        <h2 class="modal-title">Agregar lugar</h2>
-        <form id="add-form" onsubmit="addPlace(event)">
+        <h2 class="modal-title" id="add-place-title">Agregar lugar</h2>
+        <form id="add-place-form" onsubmit="savePlace(event)">
           <div class="form-group">
             <label>Nombre *</label>
-            <input type="text" id="new-name" required placeholder="Ej: Horta">
+            <input type="text" id="fp-name" required placeholder="Ej: Horta">
           </div>
           <div class="form-group">
             <label>Barrio</label>
-            <input type="text" id="new-neighborhood" placeholder="Ej: Villa Crespo">
+            <input type="text" id="fp-neighborhood" placeholder="Ej: Villa Crespo">
           </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>Categoría</label>
-              <select id="new-category">
-                <option value="Resto">Resto</option>
-                <option value="Chill">Chill</option>
-                <option value="Pastas">Pastas</option>
-                <option value="Clásicos ⭐️">Clásicos ⭐️</option>
-                <option value="Platitos">Platitos</option>
-                <option value="Vinilos">Vinilos</option>
-                <option value="Bares">Bares</option>
-                <option value="Rooftop">Rooftop</option>
-                <option value="Casual">Casual</option>
-                <option value="Asiático">Asiático</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Agregado por</label>
-              <select id="new-added-by">
-                <option value="Lauti">Lauti</option>
-                <option value="Pipu">Pipu</option>
-              </select>
+          <div class="form-group">
+            <label>Instagram</label>
+            <div class="input-prefix">
+              <span>@</span>
+              <input type="text" id="fp-instagram" placeholder="handle (opcional)" autocomplete="off" autocorrect="off" autocapitalize="off">
             </div>
           </div>
           <div class="form-group">
-            <label>Notas</label>
-            <textarea id="new-notes" placeholder="Por qué querés ir, qué te dijeron..."></textarea>
+            <label>Categorías</label>
+            <div id="fp-categories" class="cat-checks"></div>
           </div>
-          <button type="submit" class="btn-primary" id="btn-save">Guardar lugar</button>
+          <div class="form-group">
+            <label>Notas</label>
+            <textarea id="fp-notes" placeholder="Por qué querés ir, qué te dijeron..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Agregado por</label>
+            <div class="user-toggle">
+              <button type="button" class="user-btn active" data-user="Lauti" onclick="pickUser(this,'add-place-form')">Lauti</button>
+              <button type="button" class="user-btn" data-user="Pipu" onclick="pickUser(this,'add-place-form')">Pipu</button>
+            </div>
+          </div>
+          <input type="hidden" id="fp-id">
+          <input type="hidden" id="fp-precat">
+          <button type="submit" class="btn-primary" id="btn-save-place">Guardar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODAL: Review ── -->
+  <div id="modal-review" class="modal hidden" onclick="backdropClose(event,'modal-review')">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <button class="modal-close" onclick="closeModal('modal-review')">✕</button>
+      <div class="modal-body">
+        <h2 class="modal-title">Mi review</h2>
+        <form id="review-form" onsubmit="saveReview(event)">
+          <div class="form-group">
+            <label>¿Quién sos?</label>
+            <div class="user-toggle">
+              <button type="button" class="user-btn active" data-user="Lauti" onclick="pickUser(this,'review-form')">Lauti</button>
+              <button type="button" class="user-btn" data-user="Pipu" onclick="pickUser(this,'review-form')">Pipu</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Rating</label>
+            <div class="star-row" id="review-stars">
+              <span class="star" data-n="1" onclick="setReviewRating(1)">★</span>
+              <span class="star" data-n="2" onclick="setReviewRating(2)">★</span>
+              <span class="star" data-n="3" onclick="setReviewRating(3)">★</span>
+              <span class="star" data-n="4" onclick="setReviewRating(4)">★</span>
+              <span class="star" data-n="5" onclick="setReviewRating(5)">★</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Platos que comimos</label>
+            <textarea id="fr-dishes" placeholder="Ej: burrata, tagliatelle al ragú..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Notas</label>
+            <textarea id="fr-notes" placeholder="Cómo estuvo, qué nos gustó..."></textarea>
+          </div>
+          <input type="hidden" id="fr-place-id">
+          <button type="submit" class="btn-primary">Guardar review</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODAL: Category ── -->
+  <div id="modal-category" class="modal hidden" onclick="backdropClose(event,'modal-category')">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <button class="modal-close" onclick="closeModal('modal-category')">✕</button>
+      <div class="modal-body">
+        <h2 class="modal-title" id="cat-modal-title">Nueva categoría</h2>
+        <form id="cat-form" onsubmit="saveCategory(event)">
+          <div class="form-group">
+            <label>Nombre *</label>
+            <input type="text" id="fc-name" required placeholder="Ej: Brunch">
+          </div>
+          <div class="form-group">
+            <label>Emoji</label>
+            <input type="text" id="fc-emoji" placeholder="🍽️" maxlength="4">
+          </div>
+          <div class="form-group">
+            <label>Color</label>
+            <div id="color-grid" class="color-grid"></div>
+          </div>
+          <input type="hidden" id="fc-id">
+          <button type="submit" class="btn-primary">Guardar categoría</button>
         </form>
       </div>
     </div>
