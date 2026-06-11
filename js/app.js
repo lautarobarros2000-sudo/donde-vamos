@@ -196,11 +196,19 @@ async function openPlaceDetail(placeId) {
   const lautiR = (reviews || []).find(r => r.user_name === 'Lauti');
   const pipuR  = (reviews || []).find(r => r.user_name === 'Pipu');
 
-  const igUrl = p.instagram_handle
-    ? `https://www.instagram.com/${p.instagram_handle}/`
-    : `https://www.instagram.com/explore/search/?q=${encodeURIComponent(p.name)}`;
-  const ttUrl = `https://www.tiktok.com/search?q=${encodeURIComponent(p.name)}`;
-  const igLabel = p.instagram_handle ? `@${p.instagram_handle}` : 'Instagram';
+  const ttQuery = encodeURIComponent(p.name);
+  const ttAppUrl = `snssdk1233://search?keyword=${ttQuery}`;
+  const ttWebUrl = `https://www.tiktok.com/search?q=${ttQuery}`;
+
+  let igHtml;
+  if (p.instagram_handle) {
+    const igAppUrl = `instagram://user?username=${encodeURIComponent(p.instagram_handle)}`;
+    const igWebUrl = `https://www.instagram.com/${p.instagram_handle}/`;
+    igHtml = `<a href="${igAppUrl}" class="social-btn" onclick="appFallback(${JSON.stringify(igWebUrl)})">&#128247; @${esc(p.instagram_handle)}</a>`;
+  } else {
+    const igGoogleUrl = `https://www.google.com/search?q=${encodeURIComponent(p.name + ' instagram')}`;
+    igHtml = `<a href="${igGoogleUrl}" target="_blank" rel="noopener" class="social-btn">&#128269; Buscar Instagram</a>`;
+  }
 
   document.getElementById('modal-place-body').innerHTML = `
     <div class="detail-name">${esc(p.name)}</div>
@@ -210,8 +218,8 @@ async function openPlaceDetail(placeId) {
     </div>
 
     <div class="social-btns">
-      <a href="${igUrl}" target="_blank" rel="noopener" class="social-btn">📷 ${esc(igLabel)}</a>
-      <a href="${ttUrl}" target="_blank" rel="noopener" class="social-btn">🎵 TikTok</a>
+      ${igHtml}
+      <a href="${ttAppUrl}" class="social-btn" onclick="appFallback(${JSON.stringify(ttWebUrl)})">&#127925; TikTok</a>
     </div>
 
     ${p.notes ? `
@@ -494,6 +502,17 @@ function toggleEditMode() {
   editMode = !editMode;
   document.getElementById('app').classList.toggle('edit-mode', editMode);
   document.getElementById('btn-edit-mode').classList.toggle('active', editMode);
+}
+
+// ── APP DEEP LINK FALLBACK ──
+// Fires alongside a custom-scheme href (snssdk1233://, instagram://).
+// If the app opens, window loses focus and we cancel the web fallback.
+// If the app is not installed, after 1.5s we open the web URL.
+function appFallback(webUrl) {
+  const t = setTimeout(() => window.open(webUrl, '_blank', 'noopener'), 1500);
+  const cancel = () => clearTimeout(t);
+  window.addEventListener('blur', cancel, { once: true });
+  document.addEventListener('visibilitychange', cancel, { once: true });
 }
 
 // ── MODAL HELPERS ──
