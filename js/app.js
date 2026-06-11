@@ -196,7 +196,7 @@ async function openPlaceDetail(placeId) {
   const lautiR = (reviews || []).find(r => r.user_name === 'Lauti');
   const pipuR  = (reviews || []).find(r => r.user_name === 'Pipu');
 
-  const ttQuery = encodeURIComponent(p.name);
+  const ttQuery = encodeURIComponent([p.name, p.neighborhood, 'restaurante'].filter(Boolean).join(' '));
   const ttAppUrl = `snssdk1233://search?keyword=${ttQuery}`;
   const ttWebUrl = `https://www.tiktok.com/search?q=${ttQuery}`;
 
