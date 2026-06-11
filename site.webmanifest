@@ -1,0 +1,22 @@
+{
+  "name": "¿Dónde vamos?",
+  "short_name": "¿Dónde vamos?",
+  "description": "Nuestra lista de restaurantes y bares",
+  "start_url": "/donde-vamos/",
+  "display": "standalone",
+  "background_color": "#8B2230",
+  "theme_color": "#8B2230",
+  "icons": [
+    {
+      "src": "apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
